@@ -4,7 +4,7 @@
 #include <sys/types.h>
 
 #define UPROG_VERSION	1
-#define UPROG_RELEASE	12
+#define UPROG_RELEASE	13
 #define PROG_ID(n)	fprintf(stderr,n " %d.%d "\
 			"(Umsdos compatibility level %d.%d)\n"\
 			,UPROG_VERSION,UPROG_RELEASE\

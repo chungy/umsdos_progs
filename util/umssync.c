@@ -364,11 +364,33 @@ static int umssync_dodir (
 			}else{
 				int cmp = strcmp(pt_udir->ment.d_name, pt_ddir->d_name);
 				if (cmp == 0){
-					if (S_ISDIR(pt_udir->uent.mode)){
-						toomanysub |= umssync_addsdir (UM_fd
-							,pt_udir->uent.name,pt_udir->ment.d_name
-							,pt_udir->uent.uid,pt_udir->uent.gid
-							,tbsub,maxsub,nbsub);
+					/* Handle a special case (bug) when the EMD entry is */
+					/* a directory but FAT entry is a file               */
+					if (S_ISDIR(pt_udir->uent.mode))
+                                	{
+                              			struct stat fstat;
+
+						UM_dosstat( UM_fd, pt_ddir->d_name, &fstat );
+                                              	if( !S_ISDIR(fstat.st_mode) )
+                                                {
+                                                  printf ("FILE %s represented as DIR ? Changing back to file!\n", pt_ddir->d_name);
+                                                  /* remove the wrong entry from the EMD file */
+                                                  umssync_uunlink( UM_fd, path, opt, &pt_udir->uent );
+						  /* create a correct entry */
+						  UM_create( UM_fd,
+							     pt_udir->uent.name,
+							     fstat.st_mode,
+								fstat.st_mtime,
+								fstat.st_mtime,
+								fstat.st_mtime,opt->uid,opt->gid,0);
+                                                }
+					        else
+						{
+							toomanysub |= umssync_addsdir (UM_fd
+								,pt_udir->uent.name,pt_udir->ment.d_name
+								,pt_udir->uent.uid,pt_udir->uent.gid
+								,tbsub,maxsub,nbsub);
+						}
 					}
 					pt_ddir++;
 				}else if (cmp < 0){
@@ -456,14 +478,19 @@ static int umssync_dodirs (
 		depth--;
 		if (!hasemd)
 			new_opt.full_recurse--;
+
 		/* Recursion of this function will use the unused part of */
 		/* tbsub[]. */
 		for (i=0; i<nbsub && ret != -1; i++,ptsub++){
 			char spath[PATH_MAX];
 			struct stat sstat;
+			if (strlen(path)+strlen(ptsub->name) >= PATH_MAX) {
+				fprintf (stderr, "\n%s/%s\nPath too long (%u)!\n", path, ptsub->name, PATH_MAX);
+				return -1;
+			}
 			path_make (path,ptsub->name,spath);
 			if (stat(spath,&sstat)==-1){
-				fprintf (stderr,"Can't stat directory %s\n",spath);
+				fprintf (stderr,"\nCan't stat directory %s\n",spath);
 				ret = -1;
 			}else if (dir_stat->st_dev == sstat.st_dev){
 				/* #Specification: umssync / mount point
