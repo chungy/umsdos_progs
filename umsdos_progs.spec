@@ -1,6 +1,6 @@
 Name: umsdos_progs
-Version: 1.11
-Release: 2
+Version: 1.12
+Release: 1
 Summary: Utilities for doing UMSDOS FS operations
 Source0: umsdos_progs-%{version}.tgz
 ExclusiveOS: Linux

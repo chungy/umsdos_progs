@@ -23,6 +23,9 @@ utilities (it needs linux/fs/umsdos/mangle.c)
 recent information about UMSDOS can be found at 
 http://www.voyager.hr/~mnalis/umsdos/
 
+anonymous CVS access fom these sources may be found at
+http://cvs.linux.hr/
+
 If you are getting UMSDOS_STAT_DOS errors while umssync-ing, please
 see a patches there.
 

@@ -34,8 +34,8 @@ umssetup: umssync
 
 # Not really useful utilities
 # Dump of a --linux-.---
-udump: udump.c
-	$(GCC) $(CFLAGS) -o udump udump.c
+udump: udump.c mangle.o printk.o
+	$(GCC) $(CFLAGS) -o udump udump.c mangle.o printk.o
 
 # test UMSDOS_GETVERSION (Basic communication with kernel). Totally useless.
 testver: testver.o umsdosio.o

@@ -12,6 +12,7 @@
 
 int main (int argc, char *argv[])
 {
+	int recsize;
 	int ret = -1;
 	if (argc != 2){
 		fprintf (stderr,"UMSDOS EMD file dump\nudump file\n");
@@ -22,7 +23,13 @@ int main (int argc, char *argv[])
 		}else{
 			struct umsdos_dirent entry;	
 			int no = 1;
-			while (fread(&entry,sizeof(entry),1,fin)==1){
+			while (fread(&entry, UMSDOS_REC_SIZE, 1, fin) == 1){
+				recsize = umsdos_evalrecsize (entry.name_len);
+				/* Variable size record. Maybe, we have to read some more */
+				if (recsize > UMSDOS_REC_SIZE) {
+					fread (((char *) &entry) + UMSDOS_REC_SIZE, recsize - UMSDOS_REC_SIZE, 1, fin);
+				}
+			
 				if (entry.name_len != 0){
 					printf ("%3d - uid(%d) gid(%d) mode(%o) flags(%d) "
 						"rdev(%d,%d)\n",no
