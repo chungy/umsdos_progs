@@ -1,4 +1,9 @@
 --- NEW NEW NEW ---
+Ok, the bump from version 0.10 to 1.11 is not of some kind of "great release
+full of changes" (although it does contain few fixes), but just to make it
+clear that 0.10 was actually newer than 0.9. With 1.11 there will hopefully
+be no such confusion.
+
 Big rewrite by Matija Nalis <mnalis@jagor.srce.hr> is in progress.
 
 (note: it no longer requires C++ for utils [as of 0.10]. tests/ is still
@@ -14,6 +19,13 @@ This is essential !
 
 Also note that you will need full kernel tree (not just includes) to compile
 utilities (it needs linux/fs/umsdos/mangle.c)
+
+recent information about UMSDOS can be found at 
+http://www.voyager.hr/~mnalis/umsdos/
+
+If you are getting UMSDOS_STAT_DOS errors while umssync-ing, please
+see a patches there.
+
 --- NEW NEW NEW ---
 
 This stuff is written by Jacques Gelinas (jacques@solucorp.qc.ca).

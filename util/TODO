@@ -3,6 +3,12 @@
  * I'll make them english soon, I promise... Just nag me via mail :)
  */
 
+- announce freshmeat.net
+
++ bump version to 1.11
+
+- fix 279 path char limit! (segfault na dugim pathnames - vidi mail)
+
 + srediti umsdos_fs.h, napraviti za pocetak cistu verziju koja ne koristi
 nista drugih include-ova i ima samo struct umsdos_ioctl
 

@@ -307,7 +307,7 @@ int UM_open (
 	int quit)		/* exit(-1) if directory can't be open */
 				/* if quit == 0, isok() should be used */
 {
-	char buf[300];
+	char buf[PATH_MAX];
 	struct stat dir_stat;
 	int fd;
 	
