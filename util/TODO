@@ -1,0 +1,34 @@
+/*
+ * sorry, those notes are in Croatian only for now.
+ * I'll make them english soon, I promise... Just nag me via mail :)
+ */
+
++ srediti umsdos_fs.h, napraviti za pocetak cistu verziju koja ne koristi
+nista drugih include-ova i ima samo struct umsdos_ioctl
+
++ srediti da samo umsdosio.c prica sa ioctlovima itd.
+
++ u umsdosio.c srediti kopiranja iz struct dirent ne mogu biti sa memcpy i
+sl. nego ce morati biti kopiranje element po element jer se struct dirent u
+kernelu i struct dirent u glibcu razlikuju !
+
+- kasnije probati vratiti nazad na koristenje pravi umsdos_fs.h iz kernela.
+
+- pretvoriti sve C++ u cisti C 
+
+- srediti i tests/
+
+- maknuti / promijeniti tests/ testove koji ne rade na 2.2.x (rmdir '.' i sl.)
+
+- na kraju sve DOBRO istestirati
+
+- publish changes... WWW stranice ?
+
+- maknuti iz ../tests  one testove koji bas ne rade sa 2.2.x po defualtu, i
+staviti readme za to
+
+- generirati pravi umsdos_gen.h is umsdos_fs.h (da ne bude clasheva)
+
+- fix tests: /etc/mtools ne postoji i ostalo.
+
++ RedHat .SPEC !

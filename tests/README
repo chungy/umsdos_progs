@@ -1,0 +1,20 @@
+tests/ are being modified to work with 2.2.x kernels (some things changed,
+for example maximal symlink depth, and ability to do 'rmdir .' etc). See
+#define KERN_22X in include/ums_config.h and change it accordingly). Please
+not that some tests (for example ones including mknod(2) or chown(2) need
+root priviledges)
+
+Currently (990626), tests should be passable in 2.2.10 kernel for utstgen
+running over ext2 filesystem. 
+
+
+utstgen over umsdos currently (kernel 2.2.10 + Viro's FAT-patch-20 -- get it
+from ftp://ftp.math.psu.edu/pub/viro/) passes all utstgen tests except:
+
+gen/hlink.C/hlink_simple: Simple hard link operations
+gen/rename.C/rename_exist: Rename a file and the target exists
+gen/time.C/time_simple: Simple operation to change the time stamp of files
+
+utstspc is broken currently (wants prehistoric mtools)
+(corrected to find and new mtools 990701, but haven't tried if it passes any
+tests yet. stay tuned...)

@@ -1,0 +1,56 @@
+--- NEW NEW NEW ---
+Big rewrite by Matija Nalis <mnalis@jagor.srce.hr> is in progress.
+
+(note: it no longer requires C++ for utils [as of 0.10]. tests/ is still
+C++.  This is still being ironed out, so please have patience with CVS until
+release. Thanks. Also note that it does not compile yet, parts which compile
+are buggy and everything is full of glibc/kernel clashes and remnants of
+C++. Docs (also remaining of this and other README's) are also completely
+outdated. tests/ is still C++. It is all being fixed. Feel free to send
+patches. Thanks for you patience.)
+
+please edit include/ums_config.h prior to 'make all' in topdir!
+This is essential !
+
+Also note that you will need full kernel tree (not just includes) to compile
+utilities (it needs linux/fs/umsdos/mangle.c)
+--- NEW NEW NEW ---
+
+This stuff is written by Jacques Gelinas (jacques@solucorp.qc.ca).
+Comments are welcome.
+
+This is the distribution of the UMSDOS file system utilities.
+There is two directories.
+
+util: contain administration tool for umsdos and man page.
+
+tests: Contain regression tests for both umsdos and msdos file system
+
+To build this distribution, do
+
+
+	make all
+
+To install (this will put few programs in /sbin)
+
+	make install
+
+To clean object files
+
+	make clean
+
+To test umsdos, here is the sequence I do.
+
+	cd tests
+	# mount0 assume that drive F: is your floppy B:
+	# I use this trick to do mformat
+	make mount0
+	utstgen all
+	umount /mnt
+	utstspc all
+
+To learn about umsdos (internal) get the file umsdos-x.y-doc.gz
+from sunsite.unc.edu in pub/Linux/ALPHA/umsdos. See also
+the README in /usr/src/linux/fs/umsdos.
+
+	

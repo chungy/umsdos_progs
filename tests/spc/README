@@ -1,0 +1,4 @@
+This directory contain test cases specific to the UMSDOS file
+system.
+
+It contains also some test specific to the MSDOS fs.

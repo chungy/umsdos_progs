@@ -1,0 +1,5 @@
+This directory contain test cases general. They should work on
+any UNIX file system. Some test are there to prove UMSDOS behave like
+a UNIX fs.
+
+

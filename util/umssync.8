@@ -1,0 +1,139 @@
+.\" Copyright 1993 Jacques Gelinas (jacques@solucorp.qc.ca)
+.\" Most of this was copied from the README file.  Do not restrict distribution.
+.\" May be distributed under the GNU General Public License
+.de EM
+.B --linux-.---
+..
+.de US
+.B umssync
+..
+.TH UMSSYNC 8 "21 December 1993"
+.SH NAME
+umssync \- Synchronise Umsdos directory structure with MsDOS
+.SH SYNOPSIS
+.B umssync
+[
+.B options
+]
+directory path ...
+.SH DESCRIPTION
+.B umssync
+scan the given directories and compare the content of the
+.EM
+file with the content of the DOS directory. Missing files in
+the
+.EM
+are added.
+.PP
+We recommend running this utility in the
+.B /etc/rc.d/rc.M
+or
+.B /etc/rc.d/rc.S
+scripts right after the mount -a. It is expected that this utility
+will be one day merged into a fsck.umsdos.This utility is needed because
+files may be created
+during DOS session without LINUX knowing about it. There is
+no easy way to do this synchronisation at run time, in the
+file system driver. The performance penality would be to
+high.
+.PP
+.US
+need not to run on the entire file system. Only on parts of it
+which are activly used (file creation deletion etc...) during DOS session.
+.PP
+.US
+is normally run by root. In fact most IOCTL used by
+.US
+need root effective id.
+.US
+may be run by a ordinary user.
+.US
+may be setuid root. If it is run by another user than root, it changes
+its behavior. Most options are desallowed and the inheriting mode
+is forced on. This means that a user may apply
+.US
+in any directories, but the files "umssynced" will be given to the
+owner of the directory with fairly restrictive permission.
+.SH OPTIONS
+All options require an argument. The argument may be glue to the
+option letter, or given separatly. Numeric arguments may be given
+in decimal, hexadecimal or octal unless specified.
+.US
+follow C language convention.
+Numbers starting with a 0 are octal. Numbers starting with 0x are
+hexadecimal.
+.PP
+.TP
+.B \-c+ or \-c\-
+Sets the conditionnal mode. The default is \-c\-. Under conditionnal
+mode, if a directory do not contain a
+.EM
+file (was never umssync'ed), it won't be touch, nor any of its
+subdirectories. This option allows you to apply
+.US
+to a complete disk without trouble.
+.TP
+.B \-d
+Sets the mode value used for
+.B directory
+entry creation.
+The value is numeric only. The value must be an octal number.
+See chmod for more info on this. The default
+value is 0755 (rwxr-xr-x).
+.TP
+.B \-f
+Sets the mode value used for
+.B file
+entry creation.
+The value is numeric only. The value must be an octal number.
+ See chmod for more info on this. The default
+value is 0644 (rw-r--r--).
+.TP
+.B \-g
+Sets the group id used for entry creation. The argument may be numeric
+or a group name taken from /etc/group.
+.TP
+.B \-i
+Sets the inheriting mode. The group and user used for entry creation
+are taken from the directory in which they belong.
+.B \-i-
+disable the option.
+.B \-i+
+enable it.
+.TP
+.B \-r
+Control the depth (sub-directory) at which
+.US
+stops. A value of 0 limits the work to the current directory. The default
+value is 0. A value of 99 should be enough to cover the entire file
+system.
+.US
+won't cross file system (partition).
+.TP
+.B \-R
+Enables recursion through N directories without a 
+.EM
+file, (ie. directories that have not been umssync'ed). For use with the
+.B \-c+
+and
+.B \-r
+options.  The default is 0, (
+.US
+should not enter these directories).
+.TP
+.B \-u
+Sets the user id used for entry creation. The argument may be numeric
+or a user name taken from /etc/passwd.
+.SH BUGS
+
+
+.SH AUTHOR
+Jacques Gelinas (jacques@solucorp.qc.ca)
+.SH SEE ALSO
+
+	umssetup(8)
+
+	Technical documentation is available is plain text or html
+	format from sunsite.unc.edu:/pub/Linux/system/Filesystems/umsdos.
+	The files are umsdos-0.5.doc.txt.gz and umsdos-0.5.doc.html.tar.gz
+
