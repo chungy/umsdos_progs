@@ -26,7 +26,7 @@ static void perm_setowner (const char *path, UMSDOS_REGISTER &reg)
 			static mode_t tb[]={
 				0,07,077,0777,02777,0707,0666,0555
 			};
-			for (int m=0; m<sizeof(tb)/sizeof(tb[0]); m++){
+			for (unsigned int m=0; m<sizeof(tb)/sizeof(tb[0]); m++){
 				util_chmod (path,tb[m],reg,0);
 			}
 		}

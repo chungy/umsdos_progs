@@ -9,8 +9,7 @@ REL=`awk '/define UPROG_RELEASE/ {print \$3}'  umsdos_progs/util/umsdos_progs.h`
 FULL=${VER}.${REL}
 
 # fix .spec file
-sed "s/^Version:.*/Version: ${FULL}/" umsdos_progs/umsdos_progs.spec > umsdos_progs/umsdos_progs.spec.tmp
-mv -f umsdos_progs/umsdos_progs.spec.tmp umsdos_progs/umsdos_progs.spec
+sed "s/^Version:.*/Version: ${FULL}/" umsdos_progs/umsdos_progs.spec.tmpl > umsdos_progs/umsdos_progs.spec
 
 # return result
 echo $FULL

@@ -1,0 +1,5 @@
+umssync.c:177:			if (UM_dosrename (UM_fd, name,newname)!=-1){
+umssync.c:179:				ret = umssync_create (UM_fd, path, opt, newname, largest);
+
+watch umssync_addsdir() calls !
+

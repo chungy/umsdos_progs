@@ -13,7 +13,7 @@
 #include "umsdos_gen.h"
 
 
-static int UM_verbose = 0;
+int UM_verbose = 0;
 
 /*
 	Initialise the name fields in struct umsdos_ioctl.
@@ -146,7 +146,13 @@ int UM_ureaddir (
 	if (UM_ioctl(fd, UMSDOS_READDIR_EMD,&data)>0){
 		memcpy (udirent, &data.umsdos_dirent, sizeof (struct umsdos_dirent));
 		dirent_copy (dirent, &data);
+		
+/*		printf ("/mn/: size = %d name=>%s<\n", udirent->name_len, udirent->name);*/
 		ret = 0;
+	} else {
+		memcpy (udirent, &data.umsdos_dirent, sizeof (struct umsdos_dirent));
+		dirent_copy (dirent, &data);
+/*		printf ("/mn/: error %d, size = %d name=>%s<\n", errno, udirent->name_len, udirent->name);*/
 	}
 	return ret;
 }
@@ -254,6 +260,8 @@ int UM_dosstat (int fd, const char *fname, struct stat *fstat)
 	int ret = -1;
 	fname_copy (&data, fname);
 	data.umsdos_dirent.mode = S_IFREG|0777;
+//printf ("  /mn/ ide dosstat reclen=%d name=%s\n", data.dos_dirent.d_reclen, data.dos_dirent.d_name);
+
 	ret = UM_ioctl (fd, UMSDOS_STAT_DOS, &data);
 	fstat->st_ino  = data.stat.st_ino;
 	fstat->st_mode = data.stat.st_mode;

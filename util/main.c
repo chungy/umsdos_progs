@@ -14,7 +14,8 @@ int main (int argc, char *argv[])
 	}else{
 		progname = argv[0];
 	}
-	if (strcmp(progname,"umssync")==0){
+
+	if (strcmp(progname,SYNC_NAME)==0){
 		ret = umssync_main(argc,argv);
 	}else{
 		/* #Specification: umsdos utils / setuid root
@@ -32,14 +33,14 @@ int main (int argc, char *argv[])
 			seteuid(getuid());
 		*/
 		seteuid(getuid());
-		if (strcmp(progname,"udosctl")==0){
+		if (strcmp(progname,DOSCTL_NAME)==0){
 			ret = udosctl_main(argc,argv);
-		}else if (strcmp(progname,"umssetup")==0){
+		}else if (strcmp(progname,SETUP_NAME)==0){
 			ret = umssetup_main(argc,argv);
 		}else{
 			fprintf (stderr,"%s ???\n"
 				"Who am I. The program name must be\n"
-				"umssync, umssetup or udosctl.\n"
+				SYNC_NAME", "SETUP_NAME" or "DOSCTL_NAME".\n"
 				"Please don't rename it.\n",argv[0]);
 		}
 	}

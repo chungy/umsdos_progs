@@ -1,24 +1,39 @@
 /*
- * FIXME: this is hand-made for kernel 2.2.9 for i386 arhitecture.
+ * FIXME: this was hand-made for kernel 2.4.13 for i386 arhitecture.
  *
- * this should be auto generated one day, idea goes like this:
+ * This is include file for compatibility level 0.5 (AKA "2.4 new UMSDOS/UVFAT")
  *
- * do gcc -E some_test_proggy.c which #include "umsdos_fs.h" from kernel source
- * and contains dummy main(), and we compile it using kernel flags. Then we fire up 
- * perl script that replaces off_t with __kernel_off_t and others, and which then kills
- * all remaining typedefs for non __* types. (e.g. namespace-polluting ones)
- * then it generates this file. Any volunteers ?
- *
- * ideally, kernel would not polute namespace with such definitions but
- * would always use __kernel_ typedefs in any header that might be exported
- * (errr, yes, I should do that for umsdos module. It is too late now
- * unfortunetaly, so we have to take this approach. But it WILL be fixed)
- *
+ * Note: requires /usr/include/asm/types.h
  */
 
-#ifndef _UMSDOS_FS2_H
-#define _UMSDOS_FS2_H
- 
+#ifndef _UMSDOS_FS05_H
+#define _UMSDOS_FS05_H
+
+#include <asm/types.h>
+
+#define UMSDOS_VERSION 0
+#define UMSDOS_RELEASE 5
+#define UMSDOS_EMD_FILE "--linux5.---"
+#define UMSDOS_EMD_NAMELEN 12
+#define UMSDOS_MAXNAME 220
+#define UMSDOS_PSDROOT_NAME "linux"
+#define UMSDOS_PSDROOT_LEN 5
+#define UMSDOS_REC_SIZE 64
+#define UMSDOS_HIDDEN 1
+#define UMSDOS_HLINK 2
+#define UMSDOS_READDIR_DOS 1234
+#define UMSDOS_UNLINK_DOS 1235
+#define UMSDOS_RMDIR_DOS 1236
+#define UMSDOS_STAT_DOS 1237
+#define UMSDOS_CREAT_EMD 1238
+#define UMSDOS_UNLINK_EMD 1239
+#define UMSDOS_READDIR_EMD 1240
+#define UMSDOS_GETVERSION 1241
+#define UMSDOS_INIT_EMD 1242
+#define UMSDOS_DOS_SETUP 1243
+#define UMSDOS_RENAME_DOS 1244
+
+
 typedef unsigned short	__kernel_dev_t;
 typedef unsigned long	__kernel_ino_t;
 typedef unsigned short	__kernel_nlink_t;
@@ -42,18 +57,18 @@ struct umsdos_fake_info {
 
 
 struct umsdos_dirent {
-	unsigned char name_len;	 
-	unsigned char flags;	 
-	unsigned short nlink;	 
-	__kernel_uid_t uid;		 
-	__kernel_gid_t gid;		 
-	__kernel_time_t atime;		 
-	__kernel_time_t mtime;		 
-	__kernel_time_t ctime;		 
-	__kernel_dev_t rdev;		 
-	unsigned short mode;		 
-	char spare[12];		 
-	char name[220 ];	 
+	__u8 name_len;
+	__u8 flags;
+	__u16 nlink;
+	__u32 uid;
+	__u32 gid;
+	__u32 atime;
+	__u32 mtime;
+	__u32 ctime;
+	__u16 rdev;
+	__u16 mode;
+	char spare[8];
+	char name[220];
 };
 
 struct umsdos_info {

@@ -40,7 +40,7 @@ static int name_long (const char *path)
 
 REGISTER (name_linux,"Create a --linux-.--- file");
 
-static int name_linux (const char *path)
+static int name_linux (const char *)
 {
 	Rname_linux.verbose ("not done\n");
 	return Rname_linux.getnberr();
@@ -48,7 +48,7 @@ static int name_linux (const char *path)
 
 REGISTER (name_dosdev,"Create file with DOS reserved device names");
 
-static int name_dosdev (const char *path)
+static int name_dosdev (const char *)
 {
 	Rname_dosdev.verbose ("not done\n");
 	return Rname_dosdev.getnberr();

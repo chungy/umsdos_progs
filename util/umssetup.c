@@ -9,7 +9,7 @@
 
 static void usage()
 {
-	PROG_ID("umssetup");
+	PROG_ID(SETUP_NAME);
 	fprintf (stderr,
 "umssetup [ options ] dir_path\n"
 "\n"

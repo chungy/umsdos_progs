@@ -35,8 +35,8 @@ int main (int argc, char *argv[])
 						"rdev(%d,%d)\n",no
 						,entry.uid,entry.gid,entry.mode,entry.flags
 						,entry.rdev>>8,entry.rdev&0xff);
-					printf ("      atime(%ld) mtime(%ld) ctime(%ld) nlink(%d)\n"
-						,entry.atime,entry.mtime,entry.ctime
+					printf ("      atime(%lu) mtime(%lu) ctime(%lu) nlink(%d)\n"
+						, (unsigned long) entry.atime, (unsigned long) entry.mtime, (unsigned long) entry.ctime
 						,entry.nlink);
 					printf ("      %*.*s\n",entry.name_len,entry.name_len
 						,entry.name);

@@ -21,7 +21,7 @@ static int mmap_simple (const char *path)
 	if (f != NULL){
 		short int buf[10000];
 		int i;
-		for (i=0; i<sizeof(buf)/sizeof(buf[0]); i++)buf[i] = i;
+		for (i=0; (unsigned int) i<sizeof(buf)/sizeof(buf[0]); i++)buf[i] = i;
 		if (fwrite (buf,1,sizeof(buf),f)!=sizeof(buf)){
 			Rmmap_simple.prterr ("Can't write %d bytes\n",sizeof(buf));
 		}else{

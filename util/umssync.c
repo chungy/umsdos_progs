@@ -36,8 +36,12 @@
 #include <grp.h>
 #include <sys/stat.h>
 #include <limits.h>
+#include <errno.h>
+#include "ums_config.h"
 #include "umsdos_progs.h"
 #include "umsdos_gen.h"
+
+extern int UM_verbose;
 
 struct UMSSYNC_OPT {
 	int uid;
@@ -48,12 +52,14 @@ struct UMSSYNC_OPT {
 	int verbose;
 	int condit;
 	int full_recurse;
+	int debug;
 };
 
 struct UMSSYNC_INFO{
 	struct umsdos_dirent uent;	/* Entry in EMD */
 	struct dirent ment;		/* Corresponding mangle name */
 };
+
 
 static void path_make (
 	const char *dir_path,
@@ -66,6 +72,7 @@ static void path_make (
 		sprintf (fpath,"%s/%s",dir_path,fil_name);
 	}
 }
+
 
 /*
 	Create a file in the EMD.
@@ -83,11 +90,56 @@ static int umssync_create (
 {
 	char fpath[PATH_MAX];
 	struct umsdos_info info;
+	struct stat fstat;
 	int ret = -1;
-	
+
+			
 	path_make (path,name,fpath);
 	umsdos_parse (name,strlen(name),&info);
+
+	if (opt->debug > 2) printf (" /mn/ parse %s fake=%s (%d/%d) entry=%s (%d/%d)\n", fpath, info.fake.fname, strlen(info.fake.fname), info.fake.len, info.entry.name, strlen(info.entry.name), info.entry.name_len);
+
+#if 1
+	/* special case: VFAT allows longer entries than UVFAT ! (259 against 219) */
+	if (strlen(name) >= UMSDOS_MAXNAME) {
+		printf ("File %s too long (%d >= %d), mangling\n", name, strlen(name), UMSDOS_MAXNAME);
+
+		if (opt->debug > 2) printf ("umssync_create toolong: %s (%d)\n", info.entry.name, info.entry.name_len);
+		ret = UM_dosstat (UM_fd, name, &fstat);
+//printf ("   /mn/ dosstat ret=%d\n", ret);
+		if (ret != -1){
+			mode_t mode;
+			const char *msgtype;
+			if (S_ISDIR(fstat.st_mode)){
+				mode = opt->dir_mode|S_IFDIR;
+				msgtype = "dir";
+			}else{
+				mode = opt->fil_mode|S_IFREG;
+				msgtype = "file";
+			}
+			if (opt->verbose) printf ("Creating %s %s (%d)\n",msgtype, info.entry.name, info.entry.name_len);
+//			sleep (40);
+			ret = -EIO;
+			if (UM_dosrename (UM_fd, name, info.entry.name)!=-1){
+				ret = UM_create (UM_fd, info.entry.name,mode,fstat.st_mtime,fstat.st_mtime
+					,fstat.st_mtime,opt->uid,opt->gid,0);
+			}
+		}
+
+		return ret;
+
+	}
+#endif	
+
+#if BE_UVFAT
+#ifdef FS_UVFAT_MANGLE_ALL
+	info.msdos_reject = 0;
+#endif
+	name = info.entry.name;
+	if (0){
+#else
 	if (strchr(name,' ')!=NULL){
+#endif
 		/* #Specification: umssync / special system file
 			One glitch in the msdos fs (the linux driver) is that it
 			shows system and hidden file. This is useless. OS/2 have
@@ -102,7 +154,7 @@ static int umssync_create (
 			anyway.
 		*/
 		ret = 0;
-	}else if (info.msdos_reject){
+	}else if (info.msdos_reject == 1){
 		/* #Specification: umssync / mangled name
 			If a DOS file is missing from the EMD, it is added. If
 			the file has an extension with the first character
@@ -155,7 +207,10 @@ static int umssync_create (
 				,"Can't synchonise file %s\n"
 				 "This look like a mangled name. It has been renamed to %s.\n"
 				,fpath,newname);
+		
+printf ("  /mn/ ide rename %s -> %s\n", name, newname);		
 			if (UM_dosrename (UM_fd, name,newname)!=-1){
+printf ("  /mn/ ide create path=%s newname=%s largest=%d\n", path, newname, *largest);
 				ret = umssync_create (UM_fd, path, opt, newname, largest);
 				if (ret == 0) strcpy (name,newname);
 			}
@@ -164,7 +219,9 @@ static int umssync_create (
 		}
 	}else{
 		struct stat fstat;
+		if (opt->debug > 2) printf ("umssync_create: msdos_reject=%d for %s (%d)\n", info.msdos_reject, name, strlen(name));
 		ret = UM_dosstat (UM_fd, name, &fstat);
+//printf ("   /mn/ dosstat ret=%d\n", ret);
 		if (ret != -1){
 			mode_t mode;
 			const char *msgtype;
@@ -176,6 +233,7 @@ static int umssync_create (
 				msgtype = "file";
 			}
 			if (opt->verbose) printf ("Creating %s %s\n",msgtype,fpath);
+//			sleep (400);
 			ret = UM_create (UM_fd, name,mode,fstat.st_mtime,fstat.st_mtime
 				,fstat.st_mtime,opt->uid,opt->gid,0);
 		}
@@ -211,7 +269,11 @@ static int cmp_udir (const void *p1, const void *p2)
 {
 	struct UMSSYNC_INFO *i1 = (struct UMSSYNC_INFO *)p1;
 	struct UMSSYNC_INFO *i2 = (struct UMSSYNC_INFO *)p2;
-	return strcmp (i1->ment.d_name,i2->ment.d_name);
+#if BE_UVFAT
+	return strcasecmp (i1->uent.name, i2->uent.name);	/* use EMD long name, to compare with VFAT LFN long name ! */
+#else
+	return strcmp (i1->ment.d_name, i2->ment.d_name);
+#endif
 }
 /*
 	Sort function for qsort.
@@ -221,7 +283,11 @@ static int cmp_ddir (const void *p1, const void *p2)
 {
 	struct dirent *i1 = (struct dirent  *)p1;
 	struct dirent *i2 = (struct dirent  *)p2;
+#if BE_UVFAT
+	return strcasecmp (i1->d_name,i2->d_name);
+#else
 	return strcmp (i1->d_name,i2->d_name);
+#endif
 }
 
 struct UMS_DIRINFO {
@@ -247,8 +313,18 @@ static int umssync_addsdir(
 {
 	int ret = -1;
 	struct stat fstat;
+
+#if BE_UVFAT
+	int cur_verbose = UM_verbose;
+	UM_verbose = 0;
+	/* try first dos [mangled] name, and if that fails LFN name */
+	if ((UM_dosstat(UM_fd, dos_name, &fstat)==-1) && (UM_dosstat(UM_fd, ums_name, &fstat)==-1)){
+		fprintf (stderr,"dosstat failed for entry %s (%d) / %s (%d)\n", dos_name, strlen(dos_name), ums_name, strlen(ums_name));
+	UM_verbose = cur_verbose;
+#else
 	if (UM_dosstat(UM_fd, dos_name, &fstat)==-1){
 		fprintf (stderr,"dosstat failed for entry %s\n",ums_name);
+#endif		
 		ret = 0;
 	}else if (S_ISDIR(fstat.st_mode)){
 		if (*nbsub < maxsub){
@@ -264,6 +340,130 @@ static int umssync_addsdir(
 	}
 	return ret;
 }
+
+#if BE_UVFAT
+	struct UMSSYNC_LIST {
+		void *p;			/* Pointer to tb_ddir[] or tb_udir[] element */
+		struct UMSSYNC_LIST *next;	/* next in list, or NULL if last */
+	};
+	struct UMSSYNC_LIST *first_udir, *first_ddir, *prev_udir, *prev_ddir, *cur_udir, *cur_ddir, *next_udir;
+	
+/*
+	compares udir and ddir (for FAKE of LFN entries, depending on argument)
+*/
+static int check_names (
+	struct UMSSYNC_OPT *opt, 
+	int UM_fd,
+	const char *path,
+	struct UMS_DIRINFO tbsub[],
+	int maxsub,
+	int *nbsub,
+	int lfn)
+{
+	struct UMSSYNC_INFO *pt_udir;
+	struct dirent *pt_ddir;
+	int toomanysub=0;
+	
+	prev_udir = NULL;
+	for (cur_udir = first_udir; cur_udir;) {
+		int cmp=-1;
+		pt_udir = (struct UMSSYNC_INFO *) cur_udir->p;
+		prev_ddir = NULL;
+		
+		for (cur_ddir = first_ddir; cur_ddir; cur_ddir = cur_ddir->next){
+			pt_ddir = (struct dirent *) cur_ddir->p;
+			if (lfn) {
+				if (opt->debug > 1)
+					printf (" -- be_uvfat  cmp_lfn %s (%d/%d) <--> %s (%d/%d) == ", pt_udir->uent.name, strlen(pt_udir->uent.name), pt_udir->uent.name_len, pt_ddir->d_name, strlen(pt_ddir->d_name), pt_ddir->d_reclen);
+				cmp = strncasecmp(pt_udir->uent.name,pt_ddir->d_name, UMSDOS_MAXNAME); /* case isensitive: for example, "CVS" in EMD will be created as "cvs" in LFN, since 8.3 conformant names do not preserve case ? */
+			} else {
+				if (opt->debug > 1)
+					printf (" -- be_uvfat  cmp_fake %s <--> %s == ", pt_udir->ment.d_name, pt_ddir->d_name);
+				cmp = strncmp(pt_udir->ment.d_name, pt_ddir->d_name, UMSDOS_MAXNAME);
+			}
+			if (cmp == 0) {
+				if (lfn) {
+					if (opt->debug > 0) printf ("BREAKdd: ** found LFN ** %s\n", pt_udir->uent.name);
+				} else {
+					if (opt->debug > 0) printf ("BREAKdd: ** found FAKE ** %s\n", pt_udir->ment.d_name);
+				}
+
+				/* found match, remove the element */
+				if (opt->debug > 2) printf ("    remove from LIST ddir %s\n", ((struct dirent *)(cur_ddir->p))->d_name);
+				if (prev_ddir == NULL) first_ddir = cur_ddir->next; 
+					else prev_ddir->next = cur_ddir->next;
+				free(cur_ddir);
+
+				/* Handle a special case (bug) when the EMD entry is */
+				/* a directory but FAT entry is a file               */
+				if (S_ISDIR(pt_udir->uent.mode))
+                               	{
+					struct stat fstat;
+
+					UM_dosstat( UM_fd, pt_ddir->d_name, &fstat );
+					if (opt->debug > 3) { printf ("UENT %s DIR mode=%o, DOSSTAT mode=%o\n", pt_ddir->d_name, pt_udir->uent.mode, fstat.st_mode); }
+					if( !S_ISDIR(fstat.st_mode) ) {
+						printf ("FILE %s represented as DIR ? Changing back to file!\n", pt_ddir->d_name);
+						/* remove the wrong entry from the EMD file */
+						umssync_uunlink( UM_fd, path, opt, &pt_udir->uent );
+						/* create a correct entry */
+						UM_create( UM_fd,
+							pt_udir->uent.name,
+							fstat.st_mode,
+							fstat.st_mtime,
+							fstat.st_mtime,
+							fstat.st_mtime,opt->uid,opt->gid,0);
+					} else {
+						toomanysub |= umssync_addsdir (UM_fd
+							,pt_udir->uent.name,pt_udir->ment.d_name
+							,pt_udir->uent.uid,pt_udir->uent.gid
+							,tbsub,maxsub,nbsub);
+					}
+				}
+				break;
+			}
+			if (cmp < 0) {
+				if (lfn) {
+					if (opt->debug > 1) printf ("BREAKdd:  uu<dd %s < %s\n", pt_udir->uent.name, pt_ddir->d_name);
+				} else {
+					if (opt->debug > 1) printf ("BREAKdd:  uu<dd %s < %s\n", pt_udir->ment.d_name, pt_ddir->d_name);
+				}
+				break;
+			}
+			if (opt->debug > 1) printf ("miss\n");
+			prev_ddir = cur_ddir;
+		}
+
+		if (cmp == 0) { /* match was found above, remove udir element as well */
+			next_udir = cur_udir->next; 
+			if (opt->debug > 2) printf ("    remove from LIST udir %s\n", ((struct UMSSYNC_INFO *)(cur_udir->p))->uent.name);
+			free(cur_udir);
+			if (prev_udir == NULL) first_udir = next_udir;
+				else prev_udir->next = next_udir;
+			cur_udir = next_udir;
+		} else {	/* No match, normal advance forward */
+			prev_udir = cur_udir;
+			cur_udir = cur_udir->next;
+		}
+	}
+	return toomanysub;
+}
+
+
+#endif
+
+/*
+	returns true if string is "." or ".."
+*/		
+int isdotdir(const char *s)
+{
+	if (s[0] == '.') {
+		if (s[1] == '\0') return 1;			/* this is "." dir */
+		if ((s[1] == '.') && (s[2] == '\0')) return 2; 	/* this is ".." dir */
+	}
+	return 0;
+}
+
 /*
 	Synchronise one directory.
 */
@@ -310,6 +510,10 @@ static int umssync_dodir (
 		/* First read the EMD file */
 		pt_udir = tb_udir;
 		while (UM_ureaddir(UM_fd, &pt_udir->uent, &pt_udir->ment)!=-1){
+			if (opt->debug > 3) printf (" /mn/ uent=%s (%d) ment=%s (%d)\n", pt_udir->uent.name, strlen(pt_udir->uent.name), pt_udir->ment.d_name, strlen(pt_udir->ment.d_name));
+			if (pt_udir->uent.name_len >= UMSDOS_MAXNAME) {
+				printf ("Entry too long -- uhoh -- fixme in kernel\n");
+			}
 			if ((pt_udir->uent.flags & UMSDOS_HIDDEN)==0){
 				nb_udir++;
 				pt_udir++;
@@ -329,7 +533,8 @@ static int umssync_dodir (
 		/* acceptable both to the EMD and DOS without mangling. */
 		largest = 0;
 		while (UM_readdir(UM_fd, pt_ddir)!=-1){
-			if (pt_ddir->d_name[0] != '.'
+			if (opt->debug > 3) printf (" /mn/ ddir=%s (%d)\n", pt_ddir->d_name, strlen(pt_ddir->d_name));
+			if (!isdotdir(pt_ddir->d_name)
 				&& strcmp(pt_ddir->d_name,UMSDOS_EMD_FILE)!=0){
 				char *ptpt = strchr(pt_ddir->d_name,'.');
 				if (ptpt != NULL
@@ -350,6 +555,115 @@ static int umssync_dodir (
 		}
 		qsort (tb_udir,nb_udir,sizeof(tb_udir[0]),cmp_udir);
 		qsort (tb_ddir,nb_ddir,sizeof(tb_ddir[0]),cmp_ddir);
+
+#if BE_UVFAT
+		/* create lists for easier & _faster_ managment! */
+
+		last_udir = tb_udir + nb_udir;
+		cur_udir = NULL;
+		for (pt_udir = last_udir-1; pt_udir >= tb_udir; pt_udir--){
+			prev_udir = cur_udir;
+			cur_udir = malloc(sizeof(struct UMSSYNC_LIST)); if (!cur_udir) { perror ("malloc"); exit (1); }
+			cur_udir->p = (void *) pt_udir; cur_udir->next = prev_udir;
+		}
+		first_udir = cur_udir;
+
+		last_ddir = tb_ddir + nb_ddir;
+		cur_ddir = NULL;
+		for (pt_ddir = last_ddir-1; pt_ddir >= tb_ddir; pt_ddir--){
+			prev_ddir = cur_ddir;
+			cur_ddir = malloc(sizeof(struct UMSSYNC_LIST)); if (!cur_ddir) { perror ("malloc"); exit (1); }
+			cur_ddir->p = (void *) pt_ddir; cur_ddir->next = prev_ddir;
+		}
+		first_ddir = cur_ddir;
+
+		if (opt->debug > 0) {
+			int cnt;
+
+			printf (".........................\n"); cnt=0;
+			for (cur_udir = first_udir; cur_udir; cur_udir = cur_udir->next){
+				pt_udir = (struct UMSSYNC_INFO *) cur_udir->p;
+				printf ("sorted list udir %d: %s (%s)\n", ++cnt, pt_udir->uent.name, pt_udir->ment.d_name);
+			}
+			printf (".........................\n"); cnt=0;
+			for (cur_ddir = first_ddir; cur_ddir; cur_ddir = cur_ddir->next){
+				pt_ddir = (struct dirent *) cur_ddir->p;
+				printf ("sorted list ddir %d: %s\n", ++cnt, pt_ddir->d_name);
+			}
+
+			printf ("\n-------------------------\n\n");
+			sleep (2);
+		}
+		
+		/* first, walk the udir and remove all FAKE-name matches */
+		if (opt->debug > 0) printf ("------------ CHECK FAKE -------------\n");
+		toomanysub |= check_names(opt, UM_fd, path, tbsub, maxsub, nbsub, 0);
+
+		/* second, walk the udir and remove all LFN-name matches */
+		if (opt->debug > 0) printf ("------------ CHECK LFN -------------\n");
+		toomanysub |= check_names(opt, UM_fd, path, tbsub, maxsub, nbsub, 1);
+
+		if (opt->debug > 0) printf ("------------ END CHECKS -------------\n");
+
+		if (opt->debug > 0) {
+			int cnt;
+
+			printf (".........................\n"); cnt=0;
+			for (cur_udir = first_udir; cur_udir; cur_udir = cur_udir->next){
+				pt_udir = (struct UMSSYNC_INFO *) cur_udir->p;
+				printf ("final list udir %d: %s (%s)\n", ++cnt, pt_udir->uent.name, pt_udir->ment.d_name);
+			}
+			printf (".........................\n"); cnt=0;
+			for (cur_ddir = first_ddir; cur_ddir; cur_ddir = cur_ddir->next){
+				pt_ddir = (struct dirent *) cur_ddir->p;
+				printf ("final list ddir %d: %s (%d/%d)\n", ++cnt, pt_ddir->d_name, strlen(pt_ddir->d_name), pt_ddir->d_reclen);
+			}
+
+			printf ("\n-------------------------\n\n");
+			sleep (10);
+
+		}
+		
+		if (opt->debug > 0) printf ("------------ REMOVE REMAINING UDIRs -------------\n");
+		for (cur_udir = first_udir; cur_udir; cur_udir = cur_udir->next){
+			pt_udir = (struct UMSSYNC_INFO *) cur_udir->p;
+			if (opt->debug > 0) printf ("remove EMD %s\n", pt_udir->uent.name);
+			umssync_uunlink( UM_fd, path, opt, &pt_udir->uent );
+		}
+
+		if (opt->debug > 0) printf ("------------ ADD MISSING DDIRs -------------\n");
+		for (cur_ddir = first_ddir; cur_ddir; cur_ddir = cur_ddir->next){
+			pt_ddir = (struct dirent *) cur_ddir->p;
+			if (opt->debug > 0) printf ("add EMD for %s\n", pt_ddir->d_name);
+			
+			ret = umssync_create (UM_fd,path,opt,pt_ddir->d_name,&largest);
+			if (ret != -1){
+				toomanysub |= umssync_addsdir (UM_fd
+					,pt_ddir->d_name,pt_ddir->d_name
+					,opt->uid,opt->gid,tbsub,maxsub,nbsub);
+			}
+		}
+#else
+		if (opt->debug > 0) {
+			int cnt;
+			pt_udir = tb_udir;
+			pt_ddir = tb_ddir;
+			last_udir = tb_udir + nb_udir;
+			last_ddir = tb_ddir + nb_ddir;
+
+			printf (".........................\n"); cnt=0;
+			for (; pt_udir < last_udir; pt_udir++){
+				printf ("sorted udir %d: %s (%s)\n", ++cnt, pt_udir->uent.name, pt_udir->ment.d_name);
+			}
+			printf (".........................\n"); cnt=0;
+			for (; pt_ddir < last_ddir; pt_ddir++){
+				printf ("sorted ddir %d: %s\n", ++cnt, pt_ddir->d_name);
+			}
+
+			printf ("\n-------------------------\n\n");
+			sleep (2);
+		}
+
 		pt_udir = tb_udir;
 		pt_ddir = tb_ddir;
 		last_udir = tb_udir + nb_udir;
@@ -362,7 +676,9 @@ static int umssync_dodir (
 			if (pt_ddir == last_ddir){
 				ret = umssync_uunlink (UM_fd,path,opt, &pt_udir->uent);
 			}else{
-				int cmp = strcmp(pt_udir->ment.d_name, pt_ddir->d_name);
+				int cmp;
+				cmp = strcmp(pt_udir->ment.d_name, pt_ddir->d_name);
+			
 				if (cmp == 0){
 					/* Handle a special case (bug) when the EMD entry is */
 					/* a directory but FAT entry is a file               */
@@ -394,8 +710,10 @@ static int umssync_dodir (
 					}
 					pt_ddir++;
 				}else if (cmp < 0){
+//					printf ("    ne valja: %s, %s\n", pt_udir->uent.name, pt_ddir->d_name);
 					ret = umssync_uunlink (UM_fd,path,opt, &pt_udir->uent);
 				}else{
+		
 					ret = umssync_create (UM_fd,path,opt,pt_ddir->d_name
 						,&largest);
 					if (ret != -1){
@@ -416,6 +734,8 @@ static int umssync_dodir (
 					,opt->uid,opt->gid,tbsub,maxsub,nbsub);
 			}
 		}
+
+#endif
 	} else {
 		/* Added recursing into unpromoted directories,
 		   Michael Nonweiler 28 March '96 */
@@ -426,7 +746,7 @@ static int umssync_dodir (
 			UM_rewind(UM_fd);
 
 			while (UM_readdir(UM_fd, &cf)!=-1 && !toomanysub) {
-				if (cf.d_name[0] != '.'){
+				if (!isdotdir(cf.d_name)){
 					toomanysub |= umssync_addsdir (UM_fd
 						,cf.d_name,cf.d_name
 						,opt->uid,opt->gid
@@ -555,7 +875,7 @@ int umssync_main (int argc, char *argv[])
 {
 	int ret = -1;
 	if (argc < 2 || geteuid()!=0){
-		PROG_ID("umssync");
+		PROG_ID(SYNC_NAME);
 		fprintf (stderr,
 			"umssync [ options ] dir_path [ [ options ] dir_path ... ]\n"
 			"\n"
@@ -573,6 +893,7 @@ int umssync_main (int argc, char *argv[])
 			" -uuser  : user id for entry creation\n"
 			" -v-     : Silent operation\n"
 			" -v+     : Verbose operation\n"
+			" -dN     : Debug level N\n"
 			);
 		if (geteuid()!=0){
 			fprintf (stderr,"\n*** Only root can run umssync\n");
@@ -593,6 +914,7 @@ int umssync_main (int argc, char *argv[])
 		opt.verbose = 1;
 		opt.condit = 0;
 		opt.full_recurse = 0;
+		opt.debug = 0;
 		/* #Specification: umssync / depth
 			Normally, umssync won't recurse into directory.
 			Option -r allows for depth control. You may specify
@@ -635,6 +957,8 @@ int umssync_main (int argc, char *argv[])
 						depth = xtoi(parm, &ret);
 					}else if (arg[1] == 'R'){
 						opt.full_recurse = xtoi(parm, &ret);
+					}else if (arg[1] == 'd'){
+						opt.debug = xtoi(parm, &ret);
 					}else if (arg[1] == 'v'){
 						opt.verbose = umssync_checkoptplus(parm,'v',&ret);
 					}else if (arg[1] == 'c'){

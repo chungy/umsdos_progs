@@ -1,4 +1,25 @@
---- NEW NEW NEW ---
+THE NEWEST ver 1.32 -- the Beta support for uvfat. See
+include/ums_config.h This is Beta release, be wary !
+Backup often, etc.
+
+Now, compatibility level has changed to 0.5 for UVFAT.
+If you do #define BE_UVFAT to 0, you will still have your old
+umsdos progs that work only on UMSDOS compatibility 0.4 kernels.
+With it defined to 1, it will work only on UVFAT (comp. 0.5) kernels.
+Default is invalid -1, and umsdos_progs will REFUSE to compile until 
+you set it to 0 or 1 !
+
+IMPORTANT: to compile for UMSDOS, you need umsdos kernel includes i
+/usr/include/linux 
+To compile for UVFAT, you need UVFAT kernel includes in /usr/include/linux
+And BE_UVFAT in include/ums_config.h must match!
+You MUST edit WHOLE include/ums_config.h !
+
+Failure to follow this requirement can lead to massive data corruption
+on your msdos/vfat/umsdos/uvfat filesystems.
+
+
+--------------------- OLD / obsolete stuff below ---------------------------
 Ok, the bump from version 0.10 to 1.11 is not of some kind of "great release
 full of changes" (although it does contain few fixes), but just to make it
 clear that 0.10 was actually newer than 0.9. With 1.11 there will hopefully
@@ -29,7 +50,7 @@ http://cvs.linux.hr/
 If you are getting UMSDOS_STAT_DOS errors while umssync-ing, please
 see a patches there.
 
---- NEW NEW NEW ---
+--- OLD OLD OLD ---
 
 This stuff is written by Jacques Gelinas (jacques@solucorp.qc.ca).
 Comments are welcome.

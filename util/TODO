@@ -1,24 +1,21 @@
 /*
  * sorry, those notes are in Croatian only for now.
- * I'll make them english soon, I promise... Just nag me via mail :)
+ * I'll make them english once, I promise... Just nag me via mail :)
  */
 
-+ announce freshmeat.net
 
-+ bump version to 1.11
+- duga imena - problem sa syncanjem !
+
+-------------------------------------
+
+- uvfat support dodati (conditional?)
 
 - fix 279 path char limit! (segfault na dugim pathnames - vidi mail)
 
 + srediti umsdos_fs.h, napraviti za pocetak cistu verziju koja ne koristi
 nista drugih include-ova i ima samo struct umsdos_ioctl
 
-+ srediti da samo umsdosio.c prica sa ioctlovima itd.
-
-+ u umsdosio.c srediti kopiranja iz struct dirent ne mogu biti sa memcpy i
-sl. nego ce morati biti kopiranje element po element jer se struct dirent u
-kernelu i struct dirent u glibcu razlikuju !
-
-- kasnije probati vratiti nazad na koristenje pravi umsdos_fs.h iz kernela.
+-? kasnije probati vratiti nazad na koristenje pravi umsdos_fs.h iz kernela.
 
 - pretvoriti sve C++ u cisti C 
 
@@ -28,8 +25,6 @@ kernelu i struct dirent u glibcu razlikuju !
 
 - na kraju sve DOBRO istestirati
 
-- publish changes... WWW stranice ?
-
 - maknuti iz ../tests  one testove koji bas ne rade sa 2.2.x po defualtu, i
 staviti readme za to
 
@@ -37,4 +32,3 @@ staviti readme za to
 
 - fix tests: /etc/mtools ne postoji i ostalo.
 
-+ RedHat .SPEC !

@@ -120,7 +120,7 @@ static int read_write (
 		static int tb[]={
 			4096,2048,1024,512,513,255,50,256*1024
 		};
-		for (int i=0; i<sizeof(tb)/sizeof(tb[0])
+		for (unsigned int i=0; i<sizeof(tb)/sizeof(tb[0])
 			&& reg.getnberr()==0; i++){
 			reg.verbose ("\tTesting block size %d\n",tb[i]);
 			read_checkfile (fname,reg,tb[i],size,line_length);

@@ -6,7 +6,7 @@ all: mangle utstgen utstspc
 
 # builtin test in mangle.c
 mangle: /usr/src/linux/fs/umsdos/mangle.c printk.o
-	$(GCC) -O2 -g $(INC) -pipe -DTEST -o mangle /usr/src/linux/fs/umsdos/mangle.c printk.o
+	$(GCC) -O2 -g $(INC) -pipe -I /usr/src/linux/include -DTEST -o mangle /usr/src/linux/fs/umsdos/mangle.c printk.o
 
 # Generate prototype
 p:

@@ -1,6 +1,0 @@
-umssetup and udosctl are now symlinks to umssync
-
-	ln -s /sbin/umssync /sbin/umssetup
-	ln -s /sbin/umssync /sbin/udosctl
-
-
