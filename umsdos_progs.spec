@@ -1,25 +1,25 @@
 Name: umsdos_progs
-Version: 1.13
+Version: 1.14
 Release: 1
 Summary: Utilities for doing UMSDOS FS operations
-Source0: umsdos_progs-%{version}.tgz
+Source0: http://linux.voyager.hr/umsdos/files/umsdos_progs-%{version}.tgz
 ExclusiveOS: Linux
 ExclusiveArch: i386
 
 Copyright: GPL
 Group: Base/Kernel
-URL: http://cvs.linux.hr/
-Vendor: Matija Nalis <mnalis@jagor.srce.hr>
+URL: http://linux.voyager.hr/umsdos/progs.html
+Vendor: Matija Nalis <mnalis-umsdos@voyager.hr>
+BuildRoot: /tmp/umsdos_progs-%{version}.root
 
 %description
 These are the utilities for doing UMSDOS file system operations. You can use
 these programs to have long filenames on a DOS partition under Linux and
 still have those files available under DOS (with mangled filenames).
 
-This version can be used (and rebuild) on 2.2.x (and 2.3.x) kernels with
-glibc 2.0/2.1 based systems. To use it on 2.0.x and/or libc5 kernels, you
-need to change the defines in include/ums_config.h and recompile.
-
+This version can be used (and rebuild) on 2.2.x (and 2.3.x/2.4.x) kernels
+with glibc 2.0/2.1 based systems. To use it on 2.0.x and/or libc5 kernels,
+you need to change the defines in include/ums_config.h and recompile.
 
 %prep
 %setup -n umsdos_progs
@@ -28,16 +28,29 @@ need to change the defines in include/ums_config.h and recompile.
 make all
 
 %install
-make install
+cd util
+install -d -m 755 $RPM_BUILD_ROOT/sbin
+install -m 755 -s umssync $RPM_BUILD_ROOT/sbin
+ln -sf /sbin/umssync $RPM_BUILD_ROOT/sbin/udosctl
+ln -sf /sbin/umssync $RPM_BUILD_ROOT/sbin/umssetup
+install -d -m 755 $RPM_BUILD_ROOT/usr/man/man8
+install -m 644 umssync.8 $RPM_BUILD_ROOT/usr/man/man8
 
 %files
+%defattr(-,root,root)
 %doc README
 /sbin/umssetup
 /sbin/udosctl
 /sbin/umssync
-/usr/man/man8/umssync.8
+/usr/man/man8/umssync.8*
+
+%clean
+rm -rf $RPM_BUILD_ROOT
 
 %changelog
+* Fri Oct 26 2001 Matija Nalis <mnalis-umsdos@voyager.hr>
+ - patches for RH71, fixes to spec file
+
 * Mon Jun 28 1999 Matija Nalis <mnalis@jagor.srce.hr>
  - .spec file created
 
